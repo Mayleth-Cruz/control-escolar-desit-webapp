@@ -1,0 +1,177 @@
+import { Component, Input, OnInit } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
+import { MateriasService } from 'src/app/services/materias.service';
+import { FacadeService } from 'src/app/services/facade.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MaestrosService } from 'src/app/services/maestros.service';
+declare var $:any;
+
+@Component({
+  selector: 'app-registro-materias',
+  templateUrl: './registro-materias.component.html',
+  styleUrls: ['./registro-materias.component.scss']
+
+})
+export class RegistroMateriasComponent implements OnInit {
+  public materias: any = {};
+  public token: string = "";
+  public editar: boolean = false;
+  public errors: any = {};
+  public idMateria: Number = 0;
+  public profesores:any [] = [];
+
+  public carreras:any[]= [
+    {value: '1', viewValue: 'Ingenieria en Ciencias de la Computacion'},
+    {value: '2', viewValue: 'Licenciatura en Ciencias de la Computacion'},
+    {value: '3', viewValue: 'Ingenieria en Tecnologias de la Informacion'},
+  ];
+
+  public dias:any[]= [
+    {value: '1', nombre: 'Lunes'},
+    {value: '2', nombre: 'Martes'},
+    {value: '3', nombre: 'Miercoles'},
+    {value: '4', nombre: 'Jueves'},
+    {value: '5', nombre: 'Viernes'},
+    {value: '6', nombre: 'Sabado'},
+  ];
+
+  constructor(
+    private location: Location,
+    private materiasService: MateriasService,
+    private maestrosService: MaestrosService,
+    private router: Router,
+    public activatedRoute: ActivatedRoute,
+    private facadeService: FacadeService,
+    public dialog : MatDialog,
+  ){}
+
+  ngOnInit(): void {
+    if(this.activatedRoute.snapshot.params['id'] != undefined){
+      this.editar = true;
+      this.idMateria = this.activatedRoute.snapshot.params['id'];
+      console.log("ID Materia: ", this.idMateria);
+      this.materias = this.getMateriaByID();
+    }else{
+      this.materias = this.materiasService.esquemaMateria();
+      this.token = this.facadeService.getSessionToken();
+    }
+    this.obtenerProfesores();
+  }
+
+  public regresar(){
+    this.location.back()
+  }
+
+  public registrar(){
+    this.errors = [];
+    // this.errors = this.materiasService.validarMateria(this.materias)
+    // if(!$.isEmptyObject(this.errors)){
+    //   return false;
+    // }
+    console.log(this.materias);
+    this.materias.profesor = String(this.materias.profesor);
+
+    this.materiasService.registrarMateria(this.materias).subscribe(
+      (response)=>{
+        alert("Materia registrada correctamente");
+        console.log("Materia registrada: ", response);
+        this.location.back();
+      }, (error)=>{
+        alert("No se pudo registrar la materia");
+      }
+    );
+  }
+
+  public actualizar(){
+    // //Validación
+    // this.errors = [];
+
+    // this.errors = this.materiasService.validarMateria(this.materias, this.editar);
+    // if(!$.isEmptyObject(this.errors)){
+    //   return false;
+    // }
+    // console.log("Pasó la validación");
+
+    this.materiasService.editarMateria(this.materias).subscribe(
+      (response)=>{
+        alert("Materia editada correctamente");
+        console.log("Materia editada: ", response);
+        //Si se editó, entonces mandar al home
+        this.router.navigate(["home"]);
+      }, (error)=>{
+        alert("No se pudo editar la materia");
+        console.log("Error: ", error);
+      }
+    );
+  }
+
+
+  public checkboxChange(event: any){
+    if(event.checked){
+      this.materias.dias_json.push(event.source.value)
+    }else{
+      console.log(event.source.value);
+      this.materias.dias_json.forEach((dia, i) => {
+        if(dia == event.source.value){
+          this.materias.dias_json.splice(i,1)
+        }
+      });
+    }
+    console.log("Array dias: ", this.materias);
+  }
+
+  public revisarSeleccion(nombre: string){
+    if(this.materias.dias_json){
+      var busqueda = this.materias.dias_json.find((element)=>element==nombre);
+      if(busqueda != undefined){
+        return true;
+      }else{
+        return false;
+      }
+    }else{
+      return false;
+    }
+  }
+
+  public getMateriaByID(){
+    this.materiasService.getMateriaByID(this.idMateria).subscribe(
+      (response) => {
+        console.log("Datos de la materia: ", response)
+        this.materias = response;
+        if (typeof this.materias.dias === 'string') {
+          this.materias.dias_json = JSON.parse(this.materias.dias_json.replace(/'/g, '"'));
+        }
+        console.log("Array de dias: ", this.materias.dias_json);
+      },
+      (error) => {
+        alert("Error al obtener los datos de la materia para editar");
+        console.log("Error: ", error);
+      }
+    )
+  }
+
+  obtenerProfesores(): void {
+    this.maestrosService.obtenerListaMaestros().subscribe(
+      (response) => {
+        this.profesores = response;
+      },
+      (error) => {
+        console.error('Error al obtener la lista de profesores:', error);
+      }
+    );
+  }
+
+  soloNumeros(event: KeyboardEvent): void {
+    if (!/^[0-9]$/.test(event.key) && event.key !== 'Backspace') {
+      event.preventDefault();
+    }
+  }
+
+  soloLetras(event: KeyboardEvent): void {
+    if (!/^[a-zA-Z\s]+$/.test(event.key) && event.key !== 'Backspace') {
+      event.preventDefault();
+    }
+  }
+
+}
