@@ -33,7 +33,31 @@ export class RegistroAlumnosComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.alumno = this.alumnosService.esquemaAlumno();
+     if(this.activatedRoute.snapshot.params['id'] != undefined){
+      this.editar = true;
+      //Asignamos a nuestra variable global el valor del ID que viene por la URL
+      this.idUser = this.activatedRoute.snapshot.params['id'];
+      console.log("ID User: ", this.idUser);
+      //Al iniciar la vista asignamos los datos del user
+      this.alumno =  this.alumnosService.obtenerAlumnoPorID(this.idUser as number).subscribe(
+        (response)=>{
+          console.log("User: ", response);
+          this.alumno = response;
+          this.alumno.first_name = response.user?.first_name || response.first_name;
+          this.alumno.last_name = response.user?.last_name || response.last_name;
+          this.alumno.email = response.user?.email || response.email;
+          this.alumno.tipo_usuario = this.rol;
+
+        }, (error)=>{
+          console.log("Error: ", error);
+          alert("No se pudieron obtener los datos del alumno para editar");
+        }
+      );
+    }else{
+      this.alumno = this.alumnosService.esquemaAlumno()
+      this.alumno.rol = this.rol;
+    }
+    this.alumno = this.alumnosService.obtenerAlumnoPorID(this.alumno["id"]);
     // Rol del usuario
     this.alumno.rol = this.rol;
 

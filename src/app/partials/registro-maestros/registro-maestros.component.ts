@@ -57,11 +57,36 @@ export class RegistroMaestrosComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.maestro = this.maestrosService.esquemaMaestro();
-    // Rol del usuario
+     if(this.activatedRoute.snapshot.params['id'] != undefined){
+      this.editar = true;
+      //Asignamos a nuestra variable global el valor del ID que viene por la URL
+      this.idUser = this.activatedRoute.snapshot.params['id'];
+      console.log("ID User: ", this.idUser);
+      //Al iniciar la vista asignamos los datos del user
+      this.maestro =  this.maestrosService.obtenerMaestroPorID(this.idUser as number).subscribe(
+        (response)=>{
+          console.log("User: ", response);
+          this.maestro = response;
+          this.maestro.first_name = response.user?.first_name || response.first_name;
+          this.maestro.last_name = response.user?.last_name || response.last_name;
+          this.maestro.email = response.user?.email || response.email;
+          this.maestro.tipo_usuario = this.rol;
+
+        }, (error)=>{
+          console.log("Error: ", error);
+          alert("No se pudieron obtener los datos del alumno para editar");
+        }
+      );
+    }else{
+      this.maestro = this.maestrosService.esquemaMaestro()
+      this.maestro.materias_json = [];
+      this.maestro.rol = this.rol;
+    }
+    this.maestro = this.maestrosService.obtenerMaestroPorID(this.maestro["id"]);
+    //Rol del usuario
     this.maestro.rol = this.rol;
 
-    console.log("Datos maestro: ", this.maestro);
+    console.log("Datos alumno: ", this.maestro);
   }
 
   public regresar(){
@@ -73,10 +98,13 @@ export class RegistroMaestrosComponent implements OnInit {
     this.errors = {};
     this.errors = this.maestrosService.validarMaestro(this.maestro, this.editar);
     if(Object.keys(this.errors).length > 0){
+      console.log(this.errors);
       return false;
     }
     //Validar la contraseña
     if(this.maestro.password == this.maestro.confirmar_password){
+            console.log("1");
+
       this.maestrosService.registrarMaestro(this.maestro).subscribe(
         (response) => {
           // Redirigir o mostrar mensaje de éxito
@@ -158,8 +186,11 @@ export class RegistroMaestrosComponent implements OnInit {
     console.log("Fecha: ", this.maestro.fecha_nacimiento);
   }
 
-  // Funciones para los checkbox
+   // Funciones para los checkbox
   public checkboxChange(event:any){
+    if(!this.maestro.materias_json){
+      this.maestro.materias_json = [];
+    }
     console.log("Evento: ", event);
     if(event.checked){
       this.maestro.materias_json.push(event.source.value)

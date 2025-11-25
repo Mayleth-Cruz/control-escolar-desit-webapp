@@ -128,11 +128,17 @@ export class AlumnosService {
     return this.http.post<any>(`${environment.url_api}/alumnos/`, data, { headers });
   }
 
-  // Obtener alumno por ID
-  public getAlumnoByID(id: number): Observable<any> {
+  // Petición para obtener un administrador por su ID
+  public obtenerAlumnoPorID(idAlumno: number): Observable<any> {
     const token = this.facadeService.getSessionToken();
-    const headers = new HttpHeaders({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token });
-    return this.http.get<any>(`${environment.url_api}/alumnos-edit/?id=${id}`, { headers });
+    let headers: HttpHeaders;
+    if (token) {
+      headers = new HttpHeaders({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token });
+    } else {
+      headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+      console.log("No se encontró el token del usuario");
+    }
+    return this.http.get<any>(`${environment.url_api}/alumnos/?id=${idAlumno}`, { headers });
   }
 
   public actualizarAlumno(data: any): Observable<any> {
