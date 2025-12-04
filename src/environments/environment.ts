@@ -4,6 +4,6 @@
 
 export const environment = {
   production: false,
-  //url_api: "http://127.0.0.1:8000"
-  url_api: 'https://cheethakademy-backend-django.onrender.com'
+  url_api: "https://api-pdp2.onrender.com"
+  //url_api: 'https://cheethakademy-backend-django.onrender.com'
 };
